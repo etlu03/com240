@@ -1,6 +1,7 @@
 import argparse
 import re
 
+# current RISC240 ISA
 operands = {
             "ADD" : "{} <- {} + {}",
             "ADDI": "{} <- {} + {}",
@@ -33,13 +34,17 @@ operands = {
 modes = sorted(operands.keys(), key=len, reverse=True)
 modes = re.compile("|".join(modes))
 
+# seperate instructions based on argument count
 three_args = {"ADD", "ADDI",  "AND", "LW",   "NOT", "OR",
               "SLL", "SLLI", "SRA", "SRAI", "SRL", "SRLI",
               "SUB", "SW", "XOR"}
 two_args   = {"LI", "MV", "SLT", "SLTI"}
 one_args   = {"BRA", "BRC", "BRN", "BRNZ", "BRV", "BRZ"}
 
-def swap_entries(A, B):
+def swap_elements(A: list[str], B: list[str]) -> None:
+  '''
+  Inserts elements from list B if an element from list A is not an EOL
+  '''
   j = 0
   for i in range(len(A)):
     stripped_entry = A[i].strip()
@@ -47,13 +52,18 @@ def swap_entries(A, B):
       A[i] = B[j]
       j += 1
 
-def align_labels(Lines):
+def align_labels(Lines: list[str]) -> None:
+  '''
+  Lines up all lines with the end of the longest label
+  '''
   lines = []
+  # extracts all empty lines
   for Line in Lines:
     assembly_code = Line.strip()
     if len(assembly_code) != 0:
       lines.append(assembly_code)
 
+  # replaces all instances of `,` with blanks
   for i in range(len(lines)):
     capitalized_line = lines[i].upper()
     sanitized = re.sub(",", "", capitalized_line)
@@ -62,14 +72,17 @@ def align_labels(Lines):
   matches = [re.search(modes, line) for line in lines]
 
   lengths = []
+  # calculates the length of each label
   for match in matches:
     operand_start = match.span()[0]
     if operand_start != 0:
       lengths.append(operand_start - 1)
 
+  # calculates string offset
   maximum_length = max(lengths)
   maximum_offset = (maximum_length + 1) *  " "
 
+  # aligns all lines with longest label
   for i in range(len(lines)):
     instruction_components = lines[i].split()
     if re.search(modes, instruction_components[0]) is not None:
@@ -80,10 +93,14 @@ def align_labels(Lines):
 
     lines[i] = " ".join(instruction_components) + "\n"
 
-  swap_entries(Lines, lines)
+  swap_elements(Lines, lines)
 
-def align_instructions(Lines):
+def align_instructions(Lines: list[str]) -> None:
+  '''
+  Lines up all instructions with the end of the longest instruction
+  '''
   lines = []
+  # extracts all lines with a relevant operand
   for Line in Lines:
     assembly_code = re.search(modes, Line)
     if assembly_code is not None:
@@ -92,29 +109,37 @@ def align_instructions(Lines):
   matches = [re.search(modes, line) for line in lines]
 
   lengths = []
+  # calculates the length of all used operands
   for match in matches:
     span = match.span()
     lengths.append(span[1] - span[0])
 
+  # calculate offsets
   maximum_length = max(lengths)
   lengths = [maximum_length - length for length in lengths]
 
+  # insert offsets
   for i in range(len(matches)):
     last_char = matches[i].span()[1]
     offset = lengths[i] * " "
 
     lines[i] = lines[i][:last_char] + offset + lines[i][last_char:] + "\n"
 
-  swap_entries(Lines, lines)
+  swap_elements(Lines, lines)
 
-def retrieve_comments(lines):
+def retrieve_comments(lines: list[str]) -> list[str]:
+  '''
+  Retrieves the respective comment for each operand
+  '''
   comments = []
+  # retrieves RTL comment and properly align the entire line
   for i in range(len(lines)):
     line = lines[i]
 
     operand, args = line[0], line[2]
     comment = operands[operand]
 
+    # checks the number of required arguments
     if operand in three_args:
       arg1, arg2, arg3 = args
       comment = comment.format(arg1, arg2, arg3)
@@ -128,6 +153,7 @@ def retrieve_comments(lines):
     instruction_offset = line[1] * " "
     comment_offset = line[3] * " "
 
+    # builds comment
     arguments = " ".join(args)
     instruction = operand +  instruction_offset + arguments
     comment = comment_offset + " ; " + comment + "\n"
@@ -136,7 +162,10 @@ def retrieve_comments(lines):
 
   return comments
 
-def insert_comments(Lines, comments):
+def insert_comments(Lines: list[str], comments: list[str]) -> None:
+  '''
+  Added comments into `Lines`
+  '''
   j = 0
   for i in range(len(Lines)):
     Line = Lines[i]
@@ -146,10 +175,14 @@ def insert_comments(Lines, comments):
       Lines[i] = Line[:start] + comments[j]
       j += 1
 
-def write_comments(Lines):
+def write_comments(Lines: list[str]) -> None:
+  '''
+  Extracts the necessary components to build RTL comment
+  '''
   matches = [re.search(modes, Line) for Line in Lines]
 
   lines, lengths = [], []
+  # extracts operand, instruction offset, arguments
   for i in range(len(Lines)):
     match, line  = matches[i], Lines[i]
     if match is not None:
@@ -168,6 +201,7 @@ def write_comments(Lines):
 
   maximum_length = max(lengths)
 
+  # appends line offset to each element in `lines`
   for i in range(len(lines)):
     line, length = lines[i], maximum_length - lengths[i]
     line.append(length)
@@ -176,7 +210,10 @@ def write_comments(Lines):
 
   insert_comments(Lines, comments)
 
-def strip_comments(filename, Lines):
+def strip_comments(Lines: list[str]) -> None:
+  '''
+  For all elements in `Lines` remove the commented out portion
+  '''
   for i in range(len(Lines)):
     try:
       j = Lines[i].index(";")
@@ -184,28 +221,37 @@ def strip_comments(filename, Lines):
     except ValueError:
       continue
 
-def read_file(filename):
+def read_file(filename: str) -> list[str]:
+  '''
+  Retrieve lines from `filename`
+  '''
   with open(filename, "r+") as File:
     Lines = File.readlines()
 
   return Lines
 
-def write_file(filename, Lines):
+def write_file(filename: str, Lines: list[str]) -> None:
+  '''
+  Write `Lines` to `filename`
+  '''
   with open(filename, "w+") as File:
     File.writelines(Lines)
 
-def main(args):
-  filename, remove, format = args.filename, args.remove, args.format
+def main(args: argparse.Namespace) -> None:
+  '''
+  Main routine
+  '''
+  filename, remove, format, comment = args.filename, args.remove, args.format, args.comment
   Lines = read_file(filename)
 
-  if remove or (remove == format):
-    strip_comments(filename, Lines)
+  if remove or (remove == format) or comment:
+    strip_comments(Lines)
 
-  if format or (remove == format):
+  if format or (remove == format) or commment:
     align_labels(Lines)
     align_instructions(Lines)
 
-  if remove == format:
+  if (remove == format) or comment:
     write_comments(Lines)
 
   write_file(filename, Lines)
@@ -223,6 +269,10 @@ if __name__ == "__main__":
   parser.add_argument("-f", "--format",
                       action="store_true",
                       help="normalize RISC240 program",
+                      required=False)
+  parser.add_argument("-c", "--comment",
+                      action="store_true",
+                      help="document register-transfer levels",
                       required=False)
 
   args = parser.parse_args()
