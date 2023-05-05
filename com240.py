@@ -107,7 +107,7 @@ def align_instructions(Lines):
 
   swap_entries(Lines, lines)
 
-def create_comments(lines):
+def retrieve_comments(lines):
   comments = []
   for i in range(len(lines)):
     line = lines[i]
@@ -136,7 +136,7 @@ def create_comments(lines):
 
   return comments
 
-def write_comments(Lines, comments):
+def insert_comments(Lines, comments):
   j = 0
   for i in range(len(Lines)):
     Line = Lines[i]
@@ -146,7 +146,7 @@ def write_comments(Lines, comments):
       Lines[i] = Line[:start] + comments[j]
       j += 1
 
-def insert_comments(Lines):
+def write_comments(Lines):
   matches = [re.search(modes, Line) for Line in Lines]
 
   lines, lengths = [], []
@@ -172,9 +172,9 @@ def insert_comments(Lines):
     line, length = lines[i], maximum_length - lengths[i]
     line.append(length)
 
-  comments = create_comments(lines)
+  comments = retrieve_comments(lines)
 
-  write_comments(Lines, comments)
+  insert_comments(Lines, comments)
 
 def remove_comments(Lines):
   for i in range(len(Lines)):
@@ -194,25 +194,44 @@ def write_lines(filename, Lines):
   with open(filename, "w+") as File:
     File.writelines(Lines)
 
+def clear_comments(filename, Lines):
+  remove_comments(Lines)
+  write_lines(filename, Lines)
+
+def format_file(filename, Lines):
+  align_labels(Lines)
+  align_instructions(Lines)
+  write_lines(filename, Lines)
+
+def main(filename, Lines):
+  clear_comments(filename, Lines)
+  format_file(filename, Lines)
+  write_comments(Lines)
+  write_lines(filename, Lines)
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(
                       prog="com240",
                       description="Document Register-Transfer Levels for the RISC240 ISA")
   parser.add_argument("filename",
-                      help="RISC240 Assembly Program")
+                      help="name of RISC240 program")
+  parser.add_argument("-r", "--remove",
+                      action="store_true",
+                      help="remove existing comments",
+                      required=False);
+  parser.add_argument("-f", "--format",
+                      action="store_true",
+                      help="normalize RISC240 program",
+                      required=False)
 
   args = parser.parse_args()
-  filename = args.filename
+  filename, remove, format = args.filename, args.remove, args.format
 
   Lines = read_lines(filename)
-  remove_comments(Lines)
-  write_lines(filename, Lines)
-
-  Lines = read_lines(filename)
-
-  align_labels(Lines)
-  align_instructions(Lines)
-  insert_comments(Lines)
-
-  write_lines(filename, Lines)
+  if remove:
+    clear_comments(filename, Lines)
+  elif format:
+    format_file(filename, Lines)
+  else:
+    main(filename, Lines)
 
