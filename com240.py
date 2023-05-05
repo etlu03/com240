@@ -2,45 +2,42 @@ import argparse
 import re
 
 operands = {
-            "ADD" : "{rd} <- {rs1} + {rs2}",
-            "ADDI": "{rd} <- {rs1} + {imm}",
-            "AND" : "{rd} <- {rs1} AND {rs2}",
-            "BRA" : "goto {label}",
-            "BRC" : "if carry, goto {label}",
-            "BRN" : "if negative, goto {label}",
-            "BRNZ": "if negative or zero, goto {label}",
-            "BRV" : "if overflow, goto {label}",
-            "BRZ" : "if zero, goto {label}",
-            "LI"  : "{rd} <- {imm}",
-            "LW"  : "{rd} <- M[{rs1} + {imm}]",
-            "MV"  : "{rd} <- {rs1}",
-            "NOT" : "{rd} <- {rs1} NOT {rs2}",
-            "OR"  : "{rd} <- {rs1} OR {rs2}",
-            "SLL" : "{rd} <- {rs1} << {rs2}",
-            "SLLI": "{rd} <- {rs1} << {shamt}",
-            "SLT" : "{rs1} - {rs2}",
-            "SLTI": "{rs1} - {imm}",
-            "SRA" : "{rd} <- {rs1} >>> {rs2}",
-            "SRAI": "{rd} <- {rs1} >>> {imm}",
-            "SRL" : "{rd} <- {rs1} >> {rs2}",
-            "SRLI": "{rd} <- {rs1} >> {shamt}",
+            "ADD" : "{} <- {} + {}",
+            "ADDI": "{} <- {} + {}",
+            "AND" : "{} <- {} AND {}",
+            "BRA" : "goto {}",
+            "BRC" : "if carry, goto {}",
+            "BRN" : "if negative, goto {}",
+            "BRNZ": "if negative or zero, goto {}",
+            "BRV" : "if overflow, goto {}",
+            "BRZ" : "if zero, goto {}",
+            "LI"  : "{} <- {}",
+            "LW"  : "{} <- M[{} + {}]",
+            "MV"  : "{} <- {}",
+            "NOT" : "{} <- {} NOT {}",
+            "OR"  : "{} <- {} OR {}",
+            "SLL" : "{} <- {rs1} << {}",
+            "SLLI": "{} <- {rs1} << {}",
+            "SLT" : "{} - {}",
+            "SLTI": "{} - {}",
+            "SRA" : "{} <- {} >>> {}",
+            "SRAI": "{} <- {} >>> {}",
+            "SRL" : "{} <- {} >> {}",
+            "SRLI": "{} <- {} >> {}",
             "STOP": "all done",
-            "SUB" : "{rd} <- {rs1} - {rs2}",
-            "SW"  : "M[{rs1} + {imm}] <- {rs2}",
-            "XOR" : "{rd} <- {rs1} XOR {rs2}"
+            "SUB" : "{} <- {} - {}",
+            "SW"  : "M[{} + {}] <- {}",
+            "XOR" : "{} <- {} XOR {}"
            }
 
 modes = sorted(operands.keys(), key=len, reverse=True)
 modes = re.compile("|".join(modes))
 
-register = {"ADD", "AND", "NOT", "OR", "SLL", "SRA", "SRL", "SUB", "XOR"}
-branch = {"BRA", "BRC", "BRN", "BRNZ", "BRV", "BRZ"}
-load = {"LI"}
-move = {"MV"}
-immediate = {"ADDI", "LW", "SLLI", "SRAI", "SRLI", "SW"}
-less_than = {"SLT"}
-less_than_imm = {"SLTI"}
-stop = {"STOP"}
+three_args = {"ADD", "ADDI",  "AND", "LW",   "NOT", "OR",
+              "SLL", "SLLI", "SRA", "SRAI", "SRL", "SRLI",
+              "SUB", "SW", "XOR"}
+two_args   = {"LI", "MV", "SLT", "SLTI"}
+one_args   = {"BRA", "BRC", "BRN", "BRNZ", "BRV", "BRZ"}
 
 def swap_entries(A, B):
   j = 0
@@ -118,33 +115,15 @@ def create_comments(lines):
     operand, args = line[0], line[2]
     comment = operands[operand]
 
-    if operand in register:
-      rd, r1, rs2 = args
-      comment = comment.format(rd=rd, rs1=rs1, rs2=rs2)
-
-    if operand in branch:
-      label = args
-      comment = comment.format(label=label)
-
-    if operand in load:
-      rd, imm = args
-      comment = comment.format(rd=rd, imm=imm)
-
-    if operand in move:
-      rd, rs1 = args
-      comment = comment.format(rd=rd, rs1=rs1)
-
-    if operand in immediate:
-      rd, rs1, imm = args
-      comment = comment.format(rd=rd, rs1=rs1, imm=imm)
-
-    if operand in less_than:
-      rd, rs1, rs2 = args
-      comment = comment.format(rd=rd, rs1=rs1, rs2=rs2)
-
-    if operand in less_than_imm:
-      rd, rs1, imm = args
-      comment = comment.format(rd=rd, rs1=rs1, rs2=rs2)
+    if operand in three_args:
+      arg1, arg2, arg3 = args
+      comment = comment.format(arg1, arg2, arg3)
+    elif operand in two_args:
+      arg1, arg2 = args
+      comment = comment.format(arg1, arg2)
+    elif operand in one_args:
+      arg = args
+      comment = comment.format(arg1)
 
     instruction_offset = line[1] * " "
     comment_offset = line[3] * " "
@@ -178,7 +157,7 @@ def insert_comments(Lines):
       lengths.append(len(line) - start)
       operand, args = line[start: end], line[end:].strip()
 
-      if operand in stop:
+      if operand == "STOP":
         lines.append([operand, 0, args.split()])
         continue
 
