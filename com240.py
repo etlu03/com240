@@ -176,7 +176,7 @@ def write_comments(Lines):
 
   insert_comments(Lines, comments)
 
-def remove_comments(Lines):
+def strip_comments(filename, Lines):
   for i in range(len(Lines)):
     try:
       j = Lines[i].index(";")
@@ -184,30 +184,31 @@ def remove_comments(Lines):
     except ValueError:
       continue
 
-def read_lines(filename):
+def read_file(filename):
   with open(filename, "r+") as File:
     Lines = File.readlines()
 
   return Lines
 
-def write_lines(filename, Lines):
+def write_file(filename, Lines):
   with open(filename, "w+") as File:
     File.writelines(Lines)
 
-def clear_comments(filename, Lines):
-  remove_comments(Lines)
-  write_lines(filename, Lines)
+def main(args):
+  filename, remove, format = args.filename, args.remove, args.format
+  Lines = read_file(filename)
 
-def format_file(filename, Lines):
-  align_labels(Lines)
-  align_instructions(Lines)
-  write_lines(filename, Lines)
+  if remove or (remove == format):
+    strip_comments(filename, Lines)
 
-def main(filename, Lines):
-  clear_comments(filename, Lines)
-  format_file(filename, Lines)
-  write_comments(Lines)
-  write_lines(filename, Lines)
+  if format or (remove == format):
+    align_labels(Lines)
+    align_instructions(Lines)
+
+  if remove == format:
+    write_comments(Lines)
+
+  write_file(filename, Lines)
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(
@@ -225,13 +226,5 @@ if __name__ == "__main__":
                       required=False)
 
   args = parser.parse_args()
-  filename, remove, format = args.filename, args.remove, args.format
-
-  Lines = read_lines(filename)
-  if remove:
-    clear_comments(filename, Lines)
-  elif format:
-    format_file(filename, Lines)
-  else:
-    main(filename, Lines)
+  main(args)
 
