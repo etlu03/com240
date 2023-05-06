@@ -1,5 +1,24 @@
+###############################################################################
+#
+# @file   com240
+# @brief  RISC240 ISA Register-transfer Level Commenter
+#
+# This script reads a provided assembly program line by line and appends the
+# register-transfer level description in the form of a comment following
+# each instruction
+#
+# @author etlu03
+#
+###############################################################################
+
+
+from fnmatch import fnmatch
+from pathlib import Path
+
+import sys
 import argparse
 import re
+
 
 # current RISC240 ISA
 operands = {
@@ -31,8 +50,10 @@ operands = {
             "XOR" : "{} <- {} XOR {}"
            }
 
+
 modes = sorted(operands.keys(), key=len, reverse=True)
 modes = re.compile("|".join(modes))
+
 
 # seperate instructions based on argument count
 three_args = {"ADD", "ADDI",  "AND", "LW",   "NOT", "OR",
@@ -40,6 +61,7 @@ three_args = {"ADD", "ADDI",  "AND", "LW",   "NOT", "OR",
               "SUB", "SW", "XOR"}
 two_args   = {"LI", "MV", "SLT", "SLTI"}
 one_args   = {"BRA", "BRC", "BRN", "BRNZ", "BRV", "BRZ"}
+
 
 def swap_elements(A: list[str], B: list[str]) -> None:
   '''
@@ -51,6 +73,7 @@ def swap_elements(A: list[str], B: list[str]) -> None:
     if len(stripped_entry) != 0:
       A[i] = B[j]
       j += 1
+
 
 def align_labels(Lines: list[str]) -> None:
   '''
@@ -95,6 +118,7 @@ def align_labels(Lines: list[str]) -> None:
 
   swap_elements(Lines, lines)
 
+
 def align_instructions(Lines: list[str]) -> None:
   '''
   Lines up all instructions with the end of the longest instruction
@@ -126,6 +150,7 @@ def align_instructions(Lines: list[str]) -> None:
     lines[i] = lines[i][:last_char] + offset + lines[i][last_char:] + "\n"
 
   swap_elements(Lines, lines)
+
 
 def retrieve_comments(lines: list[str]) -> list[str]:
   '''
@@ -162,6 +187,7 @@ def retrieve_comments(lines: list[str]) -> list[str]:
 
   return comments
 
+
 def insert_comments(Lines: list[str], comments: list[str]) -> None:
   '''
   Added comments into `Lines`
@@ -174,6 +200,7 @@ def insert_comments(Lines: list[str], comments: list[str]) -> None:
       start = match.span()[0]
       Lines[i] = Line[:start] + comments[j]
       j += 1
+
 
 def write_comments(Lines: list[str]) -> None:
   '''
@@ -210,6 +237,7 @@ def write_comments(Lines: list[str]) -> None:
 
   insert_comments(Lines, comments)
 
+
 def strip_comments(Lines: list[str]) -> None:
   '''
   For all elements in `Lines` remove the commented out portion
@@ -221,6 +249,7 @@ def strip_comments(Lines: list[str]) -> None:
     except ValueError:
       continue
 
+
 def read_file(filename: str) -> list[str]:
   '''
   Retrieve lines from `filename`
@@ -230,6 +259,7 @@ def read_file(filename: str) -> list[str]:
 
   return Lines
 
+
 def write_file(filename: str, Lines: list[str]) -> None:
   '''
   Write `Lines` to `filename`
@@ -237,24 +267,41 @@ def write_file(filename: str, Lines: list[str]) -> None:
   with open(filename, "w+") as File:
     File.writelines(Lines)
 
+
 def main(args: argparse.Namespace) -> None:
   '''
   Main routine
   '''
   filename, remove, format, comment = args.filename, args.remove, args.format, args.comment
+  if not fnmatch(filename, "*.asm"):
+    file_extension = Path(filename).suffix
+
+    sys.stdout.write(f'Illegal Filename Extension "{file_extension}".\n')
+    return
+
   Lines = read_file(filename)
 
-  if remove or (remove == format) or comment:
-    strip_comments(Lines)
+  # copy a version of the `Lines` to default to
+  Old_Lines = list(Lines)
 
-  if format or (remove == format) or commment:
-    align_labels(Lines)
-    align_instructions(Lines)
+  try:
+    if remove or comment or (remove == format):
+      strip_comments(Lines)
 
-  if (remove == format) or comment:
-    write_comments(Lines)
+    if format or comment or (remove == format):
+      align_labels(Lines)
+      align_instructions(Lines)
 
-  write_file(filename, Lines)
+    if comment or (remove == format):
+      write_comments(Lines)
+
+    write_file(filename, Lines)
+  except:
+    sys.stdout.write("Oops! Something went wrong.\n")
+
+    write_file(filename, Old_Lines)
+    return
+
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(
