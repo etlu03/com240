@@ -259,20 +259,20 @@ def main(args: argparse.Namespace) -> None:
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(
                       prog="com240",
-                      description="Document Register-Transfer Levels for the RISC240 ISA")
+                      description="Register-transfer Level Documentation for the RISC240 ISA")
   parser.add_argument("filename",
-                      help="name of RISC240 program")
+                      help="name of program")
   parser.add_argument("-r", "--remove",
                       action="store_true",
-                      help="remove existing comments",
+                      help="strip program of existing comments",
                       required=False);
   parser.add_argument("-f", "--format",
                       action="store_true",
-                      help="normalize RISC240 program",
+                      help="properly format program",
                       required=False)
   parser.add_argument("-c", "--comment",
                       action="store_true",
-                      help="document register-transfer levels",
+                      help="write register-transfer levels for each instruction",
                       required=False)
 
   args = parser.parse_args()
