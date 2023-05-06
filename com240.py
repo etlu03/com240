@@ -55,7 +55,7 @@ modes = sorted(operands.keys(), key=len, reverse=True)
 modes = re.compile("|".join(modes))
 
 
-# seperate instructions based on argument count
+# divide instructions based on argument count
 three_args = {"ADD", "ADDI",  "AND", "LW",   "NOT", "OR",
               "SLL", "SLLI", "SRA", "SRAI", "SRL", "SRLI",
               "SUB", "SW", "XOR"}
@@ -65,7 +65,12 @@ one_args   = {"BRA", "BRC", "BRN", "BRNZ", "BRV", "BRZ"}
 
 def swap_elements(A: list[str], B: list[str]) -> None:
   '''
-  Inserts elements from list B if an element from list A is not an EOL
+  Exchanges elements from List B to list A if current element
+  in list A is not empty
+
+  Key Arguments:
+    A: list
+    B: list
   '''
   j = 0
   for i in range(len(A)):
@@ -77,16 +82,20 @@ def swap_elements(A: list[str], B: list[str]) -> None:
 
 def align_labels(Lines: list[str]) -> None:
   '''
-  Lines up all lines with the end of the longest label
+  Ensures all elements in the list `Lines` is aligned with the
+  end of the longest label
+
+  Key Arguments:
+    Lines: Lines of the Assembly program
   '''
   lines = []
-  # extracts all empty lines
+  # extracts all non-empty lines
   for Line in Lines:
     assembly_code = Line.strip()
     if len(assembly_code) != 0:
       lines.append(assembly_code)
 
-  # replaces all instances of `,` with blanks
+  # removes all `,` characters
   for i in range(len(lines)):
     capitalized_line = lines[i].upper()
     sanitized = re.sub(",", "", capitalized_line)
@@ -105,7 +114,7 @@ def align_labels(Lines: list[str]) -> None:
   maximum_length = max(lengths)
   maximum_offset = (maximum_length + 1) *  " "
 
-  # aligns all lines with longest label
+  # aligns all lines with the end of the longest label
   for i in range(len(lines)):
     instruction_components = lines[i].split()
     if re.search(modes, instruction_components[0]) is not None:
@@ -121,7 +130,11 @@ def align_labels(Lines: list[str]) -> None:
 
 def align_instructions(Lines: list[str]) -> None:
   '''
-  Lines up all instructions with the end of the longest instruction
+  Ensures all element in list `Lines` are aligned with the
+  end of the longest instruction
+
+  Key Arguments:
+    Lines: Lines of the Assembly program
   '''
   lines = []
   # extracts all lines with a relevant operand
@@ -154,7 +167,10 @@ def align_instructions(Lines: list[str]) -> None:
 
 def retrieve_comments(lines: list[str]) -> list[str]:
   '''
-  Retrieves the respective comment for each operand
+  Builds the respective comment for each instruction
+
+  Key Arguments:
+    Lines: Lines of the Assembly program
   '''
   comments = []
   # retrieves RTL comment and properly align the entire line
@@ -190,7 +206,12 @@ def retrieve_comments(lines: list[str]) -> list[str]:
 
 def insert_comments(Lines: list[str], comments: list[str]) -> None:
   '''
-  Added comments into `Lines`
+  Appends the register-transfer level description to the respective
+  element in list `Lines`
+
+  Key Arguemnts:
+    Lines: Lines of the Assembly program
+    Comments: List of register-transfer level descriptions
   '''
   j = 0
   for i in range(len(Lines)):
@@ -204,7 +225,11 @@ def insert_comments(Lines: list[str], comments: list[str]) -> None:
 
 def write_comments(Lines: list[str]) -> None:
   '''
-  Extracts the necessary components to build RTL comment
+  Extracts the necessary components from each element in
+  list `Lines` to build an register-transfer level description
+
+  Key Arguments:
+    Lines: Lines of the Assembly program
   '''
   matches = [re.search(modes, Line) for Line in Lines]
 
@@ -240,7 +265,10 @@ def write_comments(Lines: list[str]) -> None:
 
 def strip_comments(Lines: list[str]) -> None:
   '''
-  For all elements in `Lines` remove the commented out portion
+  Removes the commented-out portion for each element in list `Lines`
+
+  Key Arguments:
+    Lines: Lines of the Assembly program
   '''
   for i in range(len(Lines)):
     try:
@@ -252,7 +280,10 @@ def strip_comments(Lines: list[str]) -> None:
 
 def read_file(filename: str) -> list[str]:
   '''
-  Retrieve lines from `filename`
+  Reads the lines from `filename`
+
+  Key Arguments:
+    filename: Path to file
   '''
   with open(filename, "r+") as File:
     Lines = File.readlines()
@@ -262,7 +293,11 @@ def read_file(filename: str) -> list[str]:
 
 def write_file(filename: str, Lines: list[str]) -> None:
   '''
-  Write `Lines` to `filename`
+  Writes the elements in list `Lines` to `filename`
+
+  Key Arguments:
+    filename: Path to file
+    Lines: Lines of the Assembly program
   '''
   with open(filename, "w+") as File:
     File.writelines(Lines)
@@ -270,7 +305,10 @@ def write_file(filename: str, Lines: list[str]) -> None:
 
 def main(args: argparse.Namespace) -> None:
   '''
-  Main routine
+  com240 main routine
+
+  Key Arguments:
+    args: Command-line arguments
   '''
   filename, remove, format, comment = args.filename, args.remove, args.format, args.comment
   if not fnmatch(filename, "*.asm"):
