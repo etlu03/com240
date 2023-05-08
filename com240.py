@@ -310,7 +310,7 @@ def main(args: argparse.Namespace) -> None:
   Key Arguments:
     args: Command-line arguments
   '''
-  filename, remove, format, comment = args.filename, args.remove, args.format, args.comment
+  filename, remove, format = args.filename, args.remove, args.format
   if not fnmatch(filename, "*.asm"):
     file_extension = Path(filename).suffix
 
@@ -323,14 +323,12 @@ def main(args: argparse.Namespace) -> None:
   Old_Lines = list(Lines)
 
   try:
-    if remove or comment or (remove == format):
+    if remove:
       strip_comments(Lines)
-
-    if format or comment or (remove == format):
+    elif format:
       align_labels(Lines)
       align_instructions(Lines)
-
-    if comment or (remove == format):
+    else:
       write_comments(Lines)
 
     write_file(filename, Lines)
@@ -354,10 +352,6 @@ if __name__ == "__main__":
   parser.add_argument("-f", "--format",
                       action="store_true",
                       help="properly format program",
-                      required=False)
-  parser.add_argument("-c", "--comment",
-                      action="store_true",
-                      help="write register-transfer levels for each instruction",
                       required=False)
 
   args = parser.parse_args()
