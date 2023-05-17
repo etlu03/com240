@@ -4,7 +4,7 @@
 #
 # This script reads a provided assembly program line by line and appends the
 # register-transfer level description in the form of a comment following
-# each instruction
+# each instruction.
 #
 # @author etlu03
 ###############################################################################
@@ -312,7 +312,7 @@ def main(args: argparse.Namespace) -> None:
   if not fnmatch(filename, "*.asm"):
     file_extension = Path(filename).suffix
 
-    sys.stdout.write(f'Illegal Filename Extension "{file_extension}".\n')
+    sys.stdout.write(f'Illegal Filename Extension "{file_extension}"\n')
     return
 
   Lines = read_file(filename)
@@ -332,9 +332,7 @@ def main(args: argparse.Namespace) -> None:
     write_file(filename, Lines)
   except:
     sys.stdout.write("Oops! Something went wrong.\n")
-
     write_file(filename, Old_Lines)
-    return
 
 
 if __name__ == "__main__":
@@ -349,7 +347,7 @@ if __name__ == "__main__":
                       required=False);
   parser.add_argument("-f", "--format",
                       action="store_true",
-                      help="properly format program",
+                      help="properly formatted program",
                       required=False)
 
   args = parser.parse_args()
