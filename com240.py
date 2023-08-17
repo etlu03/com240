@@ -308,7 +308,7 @@ def main(args: argparse.Namespace) -> None:
   Key Arguments:
     args: Command-line arguments
   '''
-  filename, remove, format = args.filename, args.remove, args.format
+  filename = args.filename
   if not fnmatch(filename, "*.asm"):
     file_extension = Path(filename).suffix
 
@@ -321,13 +321,10 @@ def main(args: argparse.Namespace) -> None:
   Old_Lines = list(Lines)
 
   try:
-    if remove:
-      strip_comments(Lines)
-    elif format:
-      align_labels(Lines)
-      align_instructions(Lines)
-    else:
-      write_comments(Lines)
+    strip_comments(Lines)
+    align_labels(Lines)
+    align_instructions(Lines)
+    write_comments(Lines)
 
     write_file(filename, Lines)
   except:
@@ -341,14 +338,6 @@ if __name__ == "__main__":
                       description="Register-transfer Level Documentation for the RISC240 ISA")
   parser.add_argument("filename",
                       help="name of program")
-  parser.add_argument("-r", "--remove",
-                      action="store_true",
-                      help="strip program of existing comments",
-                      required=False);
-  parser.add_argument("-f", "--format",
-                      action="store_true",
-                      help="properly formatted program",
-                      required=False)
 
   args = parser.parse_args()
   main(args)
